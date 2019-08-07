@@ -96,6 +96,7 @@
 
 	var arToolkitSource = new THREEx.ArToolkitSource(artoolkitProfile.sourceParameters)
 
+	let runAr = false;
 	arToolkitSource.init(function onReady(){
 		onResize()
 		video = document.getElementsByTagName( 'video' )[0];
@@ -143,6 +144,7 @@
 
 		var lockMesh = new THREE.Mesh( geometry, shaderMaterial );
 		scene.add(lockMesh);
+
 		lockMesh.matrixAutoUpdate = false;
 		lockMesh.visible = false;
 		let container = document.getElementById("hiroContainer");
@@ -152,10 +154,12 @@
 			if(!flipped) {
 				container.style.right = "0px";
 				hiro.style.transform = "scaleX(-1)";
+				video.style.transform = "scaleX(-1)";
 			}
 			else {
 				container.style.right = "";
 				hiro.style.transform = "";
+				video.style.transform = "";
 			}
 			flipped = !flipped;
 		}}, "flip");
@@ -165,18 +169,24 @@
 				hiro.style.display = "none";
 				mesh.visible = false;
 				lockMesh.visible = true;
-				lockMesh.matrix.copy(mesh.matrixWorld);
+				runAr = false;
 			}
 			else {
 				hiro.style.display = "";
 				mesh.visible = true;
 				lockMesh.visible = false;
+				runAr = true;
 			}
 			locked = !locked;
 		}}, "toggleLock");
+
+		// *** copy over updates from mesh.matrixWorld every frame.
+		// *** relies on ar being disabled when locked
+		onRenderFcts.push(function(){
+				lockMesh.matrix.copy(mesh.matrixWorld);
+		})
 		
   		container.appendChild(gui.domElement);
-		// mesh.position.z = -3?;
 		markerGroup.add(mesh);
 
 		renderer.domElement.addEventListener("dblclick", function(e) {
@@ -212,6 +222,7 @@
 	onRenderFcts.push(function(){
 		if( arToolkitSource.ready === false )	return
 
+		if (!runAr) return
 		arToolkitContext.update( arToolkitSource.domElement )
 	})
 	
