@@ -96,7 +96,7 @@
 
 	var arToolkitSource = new THREEx.ArToolkitSource(artoolkitProfile.sourceParameters)
 
-	let runAr = false;
+	let runAr = true;
 	arToolkitSource.init(function onReady(){
 		onResize()
 		video = document.getElementsByTagName( 'video' )[0];
@@ -155,11 +155,13 @@
 				container.style.right = "0px";
 				hiro.style.transform = "scaleX(-1)";
 				video.style.transform = "scaleX(-1)";
+				renderer.domElement.style.transform = "scaleX(-1)";
 			}
 			else {
 				container.style.right = "";
 				hiro.style.transform = "";
 				video.style.transform = "";
+				renderer.domElement.style.transform = "";
 			}
 			flipped = !flipped;
 		}}, "flip");
