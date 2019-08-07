@@ -40,7 +40,7 @@
 <style>
 	.close-button {
 		position:fixed !important;
-		bottom:0px;
+		bottom:-100vh;
 	}
 </style>
 
@@ -140,6 +140,11 @@
 		gui.add(mesh.position, "z");
 		gui.add(mesh.scale, "x");
 		gui.add(mesh.scale, "y");
+
+		var lockMesh = new THREE.Mesh( geometry, shaderMaterial );
+		scene.add(lockMesh);
+		lockMesh.matrixAutoUpdate = false;
+		lockMesh.visible = false;
 		let container = document.getElementById("hiroContainer");
 		let hiro = document.getElementById("hiro");
 		let flipped = false;
@@ -154,11 +159,29 @@
 			}
 			flipped = !flipped;
 		}}, "flip");
+		let locked = false;
+		gui.add({toggleLock:function(){
+			if(!locked) {
+				hiro.style.display = "none";
+				mesh.visible = false;
+				lockMesh.visible = true;
+				lockMesh.matrix.copy(mesh.matrixWorld);
+			}
+			else {
+				hiro.style.display = "";
+				mesh.visible = true;
+				lockMesh.visible = false;
+			}
+			locked = !locked;
+		}}, "toggleLock");
 		
   		container.appendChild(gui.domElement);
 		// mesh.position.z = -3?;
-		markerGroup.add(mesh)
+		markerGroup.add(mesh);
 
+		renderer.domElement.addEventListener("dblclick", function(e) {
+			gui.closed = !gui.closed;
+		});
 	})
 	
 	// handle resize
