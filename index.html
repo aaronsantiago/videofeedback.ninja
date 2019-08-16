@@ -217,13 +217,17 @@
 		let a1 = renderer.domElement.clientWidth/renderer.domElement.clientHeight;
 		let a2 = window.innerWidth/window.innerHeight;
 
+
 		if (a2 > a1) {
-			mesh.position.x = 1.5;
-			mesh.position.z = (4*a1/a2 - 1)/2;
+			let scale = 4 * a2 / a1;
+			mesh.scale.set(scale*a1,scale,2);
+			mesh.position.x = (mesh.scale.x - 1)/2;
+			mesh.position.z = (mesh.scale.y*a1/a2 - 1)/2;
 		}
 		if (a1 > a2) {
-			mesh.position.x = (4*a2/a1 - 1)/2;
-			mesh.position.z = 1.5;
+			mesh.scale.set(4*a1,4,2);
+			mesh.position.x = (mesh.scale.x*a2/a1 - 1)/2;
+			mesh.position.z = (mesh.scale.y - 1)/2;
 		}
 	}
 
