@@ -55,6 +55,7 @@
 	//		Init
 	//////////////////////////////////////////////////////////////////////////////////
 
+	var mesh = {};
 
 	// init renderer
 	var renderer	= new THREE.WebGLRenderer({
@@ -117,7 +118,6 @@
 		}); 
 
 		let aspect = renderer.getCurrentViewport(new THREE.Vector4());
-		console.log(aspect);
 		uniforms = {
 
 				"texture": { value: texture },
@@ -125,7 +125,6 @@
 				"aspect": {value: aspect.z/aspect.w}
 
 			};
-		console.log(texture);
 
 		var shaderMaterial = new THREE.ShaderMaterial( {
 
@@ -135,7 +134,7 @@
 
 		} );
 			uniforms[ "texture" ].value.wrapS = uniforms[ "texture" ].value.wrapT = THREE.ClampToEdgeWrapping;
-		var mesh	= new THREE.Mesh( geometry, shaderMaterial );
+		mesh	= new THREE.Mesh( geometry, shaderMaterial );
 		mesh.rotation.x = -Math.PI/2;
 		mesh.position.x = 1;
 		mesh.position.z = 1;
@@ -201,6 +200,7 @@
 		renderer.domElement.addEventListener("dblclick", function(e) {
 			gui.closed = !gui.closed;
 		});
+		onResize();
 	})
 	
 	// handle resize
@@ -213,6 +213,18 @@
 		if( arToolkitContext.arController !== null ){
 			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)	
 		}	
+
+		let a1 = renderer.domElement.clientWidth/renderer.domElement.clientHeight;
+		let a2 = window.innerWidth/window.innerHeight;
+
+		if (a2 > a1) {
+			mesh.position.x = 1.5;
+			mesh.position.z = (4*a1/a2 - 1)/2;
+		}
+		if (a1 > a2) {
+			mesh.position.x = (4*a2/a1 - 1)/2;
+			mesh.position.z = 1.5;
+		}
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
