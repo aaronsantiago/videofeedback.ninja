@@ -67,6 +67,10 @@
 	renderer.domElement.style.position = 'absolute'
 	renderer.domElement.style.top = '0px'
 	renderer.domElement.style.left = '0px'
+
+	// Sometimes the rendering misbehaves and doesn't display lockMesh.
+	// Preserving the drawing buffer prevents this from displaying the camera.
+	renderer.preserveDrawingBuffer = true;
 	document.body.appendChild( renderer.domElement );
 
 	// array of functions for the rendering loop
@@ -136,6 +140,7 @@
 		mesh.position.x = 1;
 		mesh.position.z = 1;
 		mesh.scale.set(4,4,2);
+		mesh.visible = false;
 	  	var gui = new dat.GUI({autoPlace: false, width: "25vh"});
 		gui.add(mesh.position, "x");
 		gui.add(mesh.position, "z");
@@ -147,6 +152,7 @@
 
 		lockMesh.matrixAutoUpdate = false;
 		lockMesh.visible = false;
+		lockMesh.frustrumCulled = false;
 		let container = document.getElementById("hiroContainer");
 		let hiro = document.getElementById("hiro");
 		let flipped = false;
@@ -169,14 +175,10 @@
 		gui.add({toggleLock:function(){
 			if(!locked) {
 				hiro.style.display = "none";
-				mesh.visible = false;
-				lockMesh.visible = true;
 				runAr = false;
 			}
 			else {
 				hiro.style.display = "";
-				mesh.visible = true;
-				lockMesh.visible = false;
 				runAr = true;
 			}
 			locked = !locked;
@@ -185,8 +187,13 @@
 		// *** copy over updates from mesh.matrixWorld every frame.
 		// *** relies on ar being disabled when locked
 		onRenderFcts.push(function(){
+			// Show the lockMesh when the marker has been found. If marker is currently
+			// not found, display last known position.
+			if (markerGroup.visible) {
 				lockMesh.matrix.copy(mesh.matrixWorld);
-		})
+				lockMesh.visible = true;
+			}
+		});
 		
   		container.appendChild(gui.domElement);
 		markerGroup.add(mesh);

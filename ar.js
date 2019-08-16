@@ -6024,7 +6024,10 @@ ARjs.Source.prototype._initSourceWebcam = function(onReady, onError) {
                 var userMediaConstraints = {
 			audio: false,
 			video: {
-				facingMode: 'environment',
+
+                //**** change facing of camera *****
+                // facingMode: 'environment',
+				facingMode: 'user',
 				width: {
 					ideal: _this.parameters.sourceWidth,
 					// min: 1024,
