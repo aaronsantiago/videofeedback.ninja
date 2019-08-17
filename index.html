@@ -18,7 +18,7 @@
 <script type="x-shader/x-vertex" id="vertexshader">
 	varying vec2 vUv;
 	uniform mat4 matrix;
-	uniform float aspect;
+	uniform float brightness;
 	void main() {
 		vUv = uv;
 		//gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
@@ -32,8 +32,9 @@
 <script type="x-shader/x-fragment" id="fragmentshader">
 	varying vec2 vUv;
 	uniform sampler2D texture;
+	uniform float brightness;
 	void main() {
-		gl_FragColor = texture2D(texture, vUv);
+		gl_FragColor = texture2D(texture, vUv) * vec4(brightness,brightness,brightness,1);
 		//gl_FragColor = vec4(vUv.x, vUv.y,1,1);
 	}
 </script>
@@ -117,12 +118,11 @@
 			side: THREE.DoubleSide
 		}); 
 
-		let aspect = renderer.getCurrentViewport(new THREE.Vector4());
 		uniforms = {
 
 				"texture": { value: texture },
 				"matrix": {value: arToolkitContext.getProjectionMatrix()},
-				"aspect": {value: aspect.z/aspect.w}
+				"brightness": {value: 1}
 
 			};
 
@@ -134,17 +134,19 @@
 
 		} );
 			uniforms[ "texture" ].value.wrapS = uniforms[ "texture" ].value.wrapT = THREE.ClampToEdgeWrapping;
-		mesh	= new THREE.Mesh( geometry, shaderMaterial );
+		mesh = new THREE.Mesh( geometry, shaderMaterial );
 		mesh.rotation.x = -Math.PI/2;
 		mesh.position.x = 1;
 		mesh.position.z = 1;
 		mesh.scale.set(4,4,2);
 		mesh.visible = false;
+		markerGroup.add(mesh);
 	  	var gui = new dat.GUI({autoPlace: false, width: "25vh"});
 		gui.add(mesh.position, "x");
 		gui.add(mesh.position, "z");
 		gui.add(mesh.scale, "x");
 		gui.add(mesh.scale, "y");
+		gui.add(uniforms["brightness"], "value").step(.01);
 
 		var lockMesh = new THREE.Mesh( geometry, shaderMaterial );
 		scene.add(lockMesh);
@@ -195,7 +197,6 @@
 		});
 		
   		container.appendChild(gui.domElement);
-		markerGroup.add(mesh);
 
 		renderer.domElement.addEventListener("dblclick", function(e) {
 			gui.closed = !gui.closed;
