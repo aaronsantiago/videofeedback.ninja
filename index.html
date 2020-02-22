@@ -129,7 +129,7 @@
 			fragmentShader: document.getElementById( 'fragmentshader' ).textContent
 
 		} );
-			uniforms[ "texture" ].value.wrapS = uniforms[ "texture" ].value.wrapT = THREE.ClampToEdgeWrapping;
+		uniforms[ "texture" ].value.wrapS = uniforms[ "texture" ].value.wrapT = THREE.ClampToEdgeWrapping;
 		mesh = new THREE.Mesh( planeGeometry, shaderMaterial );
 		mesh.rotation.x = -Math.PI/2;
 		mesh.position.x = 1;
@@ -138,6 +138,35 @@
 		mesh.visible = false;
 		markerGroup.add(mesh);
 
+		var lockMesh = new THREE.Mesh( planeGeometry, shaderMaterial );
+		scene.add(lockMesh);
+
+		lockMesh.matrixAutoUpdate = false;
+		lockMesh.visible = false;
+		lockMesh.frustrumCulled = false;
+
+		// *** copy over updates from mesh.matrixWorld every frame.
+		// *** relies on ar being disabled when locked
+		onRenderFcts.push(function(){
+			// Show the lockMesh when the marker has been found. If marker is currently
+			// not found, display last known position.
+			if (markerGroup.visible) {
+				lockMesh.matrix.copy(mesh.matrixWorld);
+				lockMesh.visible = true;
+			}
+		});
+
+	////////////////////////////////////////////////////////////////////////////////
+	//          setup rtt buffers
+	////////////////////////////////////////////////////////////////////////////////
+
+		// Create the texture that will store our result
+		var bufferTexture = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
+		var bufferMaterial = new THREE.MeshBasicMaterial({map:bufferTexture.texture});
+		var bufferMesh = new THREE.Mesh( planeGeometry, bufferMaterial );
+	////////////////////////////////////////////////////////////////////////////////
+	//          setup gui options
+	////////////////////////////////////////////////////////////////////////////////
 
 	  	var gui = new dat.GUI({autoPlace: false, width: "25vh"});
 		gui.add(mesh.position, "x");
@@ -146,12 +175,6 @@
 		gui.add(mesh.scale, "y");
 		gui.add(uniforms["brightness"], "value").step(.01);
 
-		var lockMesh = new THREE.Mesh( planeGeometry, shaderMaterial );
-		scene.add(lockMesh);
-
-		lockMesh.matrixAutoUpdate = false;
-		lockMesh.visible = false;
-		lockMesh.frustrumCulled = false;
 		let hiroContainer = document.getElementById("hiroContainer");
 		let guiContainer = document.getElementById("guiContainer");
 		let hiro = document.getElementById("hiro");
@@ -185,17 +208,15 @@
 			}
 			locked = !locked;
 		}}, "toggleLock");
-
-		// *** copy over updates from mesh.matrixWorld every frame.
-		// *** relies on ar being disabled when locked
-		onRenderFcts.push(function(){
-			// Show the lockMesh when the marker has been found. If marker is currently
-			// not found, display last known position.
-			if (markerGroup.visible) {
-				lockMesh.matrix.copy(mesh.matrixWorld);
-				lockMesh.visible = true;
-			}
-		});
+		gui.add({bufferRender:function(){
+			renderer.setRenderTarget(bufferTexture);
+			renderer.render(scene, camera);
+			renderer.setRenderTarget(null);
+			scene.add(bufferMesh);
+		}}, "bufferRender");
+		gui.add({hideRender:function(){
+			scene.remove(bufferMesh);
+		}}, "hideRender");
 		
   		guiContainer.appendChild(gui.domElement);
 
