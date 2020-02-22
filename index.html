@@ -2,11 +2,9 @@
 <meta name='viewport' content='width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0'>
 <!-- three.js library -->
 <!-- <script src='vendor/three.js/build/three.js'></script> -->
-<script src='three.js'></script>
-<script src='dat.gui.js'></script>
-
-<!-- ar.js -->
-<script src="ar.js"></script>
+<script src='lib/three.js'></script>
+<script src='lib/dat.gui.js'></script>
+<script src="lib/ar.js"></script>
 
 <!-- Bind window error for error handling -->
 <script>
@@ -46,9 +44,10 @@
 </style>
 
 <body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
-<div id="hiroContainer" style="z-index: 12;position: absolute;overflow:hidden;width:25vh">
-	<img id="hiro" src='hiro.png' style="width: 25vh;"/>
+<div id="hiroContainer" style="z-index: 12;position: absolute;overflow:hidden;width:100vh">
+	<img id="hiro" src='hiro.png' style="width: 100vh;"/>
 </div>
+<div id="guiContainer" style="z-index: 12;position: absolute;overflow:hidden;width:20vw; right: 0px;">
 <!-- <img src='http://upload.wikimedia.org/wikipedia/commons/4/48/Hiro_marker_ARjs.png' style="z-index: 12;position: absolute;width: 25vh;"/> -->
 
 <script>
@@ -104,23 +103,20 @@
 
 	let runAr = true;
 	arToolkitSource.init(function onReady(){
+
+	////////////////////////////////////////////////////////////////////////////////
+	//          setup feedback mesh and lockon mesh
+	////////////////////////////////////////////////////////////////////////////////
+
 		onResize()
-		video = document.getElementsByTagName( 'video' )[0];
-		var texture = new THREE.VideoTexture( video );
-		texture.minFilter = THREE.NearestFilter;
-		var vidMaterial = new THREE.MeshBasicMaterial( { map: texture, side: THREE.DoubleSide } );
-		// add a torus knot	
-		// var geometry	= new THREE.CubeGeometry(1,1,1);
-		var geometry	= new THREE.PlaneGeometry(1,1,64,64);
-		var material	= new THREE.MeshNormalMaterial({
-			transparent : true,
-			opacity: 0.5,
-			side: THREE.DoubleSide
-		}); 
+		videoElement = document.getElementsByTagName( 'video' )[0];
+		var videoTexture = new THREE.VideoTexture( videoElement );
+		videoTexture.minFilter = THREE.NearestFilter;
+		var planeGeometry	= new THREE.PlaneGeometry(1,1,64,64);
 
 		uniforms = {
 
-				"texture": { value: texture },
+				"texture": { value: videoTexture },
 				"matrix": {value: arToolkitContext.getProjectionMatrix()},
 				"brightness": {value: 1}
 
@@ -134,13 +130,15 @@
 
 		} );
 			uniforms[ "texture" ].value.wrapS = uniforms[ "texture" ].value.wrapT = THREE.ClampToEdgeWrapping;
-		mesh = new THREE.Mesh( geometry, shaderMaterial );
+		mesh = new THREE.Mesh( planeGeometry, shaderMaterial );
 		mesh.rotation.x = -Math.PI/2;
 		mesh.position.x = 1;
 		mesh.position.z = 1;
 		mesh.scale.set(4,4,2);
 		mesh.visible = false;
 		markerGroup.add(mesh);
+
+
 	  	var gui = new dat.GUI({autoPlace: false, width: "25vh"});
 		gui.add(mesh.position, "x");
 		gui.add(mesh.position, "z");
@@ -148,26 +146,29 @@
 		gui.add(mesh.scale, "y");
 		gui.add(uniforms["brightness"], "value").step(.01);
 
-		var lockMesh = new THREE.Mesh( geometry, shaderMaterial );
+		var lockMesh = new THREE.Mesh( planeGeometry, shaderMaterial );
 		scene.add(lockMesh);
 
 		lockMesh.matrixAutoUpdate = false;
 		lockMesh.visible = false;
 		lockMesh.frustrumCulled = false;
-		let container = document.getElementById("hiroContainer");
+		let hiroContainer = document.getElementById("hiroContainer");
+		let guiContainer = document.getElementById("guiContainer");
 		let hiro = document.getElementById("hiro");
 		let flipped = false;
 		gui.add({flip:function(){
 			if(!flipped) {
-				container.style.right = "0px";
+				hiroContainer.style.right = "0px";
 				hiro.style.transform = "scaleX(-1)";
-				video.style.transform = "scaleX(-1)";
+				guiContainer.style.right = "";
+				videoElement.style.transform = "scaleX(-1)";
 				renderer.domElement.style.transform = "scaleX(-1)";
 			}
 			else {
-				container.style.right = "";
+				guiContainer.style.right = "0px";
+				hiroContainer.style.right = "";
 				hiro.style.transform = "";
-				video.style.transform = "";
+				videoElement.style.transform = "";
 				renderer.domElement.style.transform = "";
 			}
 			flipped = !flipped;
@@ -196,7 +197,7 @@
 			}
 		});
 		
-  		container.appendChild(gui.domElement);
+  		guiContainer.appendChild(gui.domElement);
 
 		renderer.domElement.addEventListener("dblclick", function(e) {
 			gui.closed = !gui.closed;
@@ -217,13 +218,13 @@
 
 		let a1 = renderer.domElement.clientWidth/renderer.domElement.clientHeight;
 		let a2 = window.innerWidth/window.innerHeight;
-
+		if (!mesh.scale) return;
 
 		// auto scale image based on marker being 25vh
 		// constant below accounts for white padding around marker in source image
 		let extraImageScale = (512/410);
 		if (a2 > a1) {
-			let scale = 4 * extraImageScale * a2 / a1;
+			let scale = 1 * extraImageScale * a2 / a1;
 			mesh.scale.set(scale*a1,scale,2);
 			mesh.position.x = (mesh.scale.x - extraImageScale)/2;
 			mesh.position.z = (mesh.scale.y*a1/a2 - extraImageScale)/2;
@@ -266,38 +267,6 @@
 		type : 'pattern',
 		patternUrl : 'patt.hiro',
 	})
-
-
-
-	// // build a smoothedControls
-	// var smoothedGroup = new THREE.Group()
-	// scene.add(smoothedGroup)
-	// var smoothedControls = new THREEx.ArSmoothedControls(smoothedGroup)
-	// onRenderFcts.push(function(delta){
-	// 	smoothedControls.update(markerGroup)
-	// })
-
-	//////////////////////////////////////////////////////////////////////////////////
-	//		add an object in the scene
-	//////////////////////////////////////////////////////////////////////////////////
-
-
-	var markerScene = new THREE.Scene()
-	markerGroup.add(markerScene)
-
-	var mesh = new THREE.AxisHelper()
-	markerScene.add(mesh)
-	
-	
-	// var geometry	= new THREE.TorusKnotGeometry(0.3,0.1,64,16);
-	// var material	= new THREE.MeshNormalMaterial(); 
-	// var mesh	= new THREE.Mesh( geometry, material );
-	// mesh.position.y	= 0.5
-	// markerScene.add( mesh );
-	
-	// onRenderFcts.push(function(delta){
-	// 	mesh.rotation.x += delta * Math.PI
-	// })
 
 	//////////////////////////////////////////////////////////////////////////////////
 	//		render the whole thing on the page
